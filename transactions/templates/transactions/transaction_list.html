@@ -1,0 +1,116 @@
+{% extends 'transactions/base.html' %}
+{% block title %}流水列表 - 记账本{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">流水记录</h4>
+    <a href="{% url 'transaction_create' %}" class="btn btn-primary">+ 新增流水</a>
+</div>
+
+<div class="row mb-4 g-3">
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-success">收入</h6>
+                <h3 class="text-success mb-0">+{{ stats.income|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-danger">支出</h6>
+                <h3 class="text-danger mb-0">-{{ stats.expense|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-primary">结余</h6>
+                <h3 class="text-primary mb-0">{{ stats.balance|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-3">
+        <select name="year" class="form-select">
+            {% for y in years %}
+                <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}年</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="month" class="form-select">
+            {% for m in months %}
+                <option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}月</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="type" class="form-select">
+            <option value="">全部类型</option>
+            <option value="INCOME" {% if filter_type == "INCOME" %}selected{% endif %}>收入</option>
+            <option value="EXPENSE" {% if filter_type == "EXPENSE" %}selected{% endif %}>支出</option>
+        </select>
+    </div>
+    <div class="col-md-3">
+        <select name="category" class="form-select">
+            <option value="">全部分类</option>
+            {% for c in categories %}
+                <option value="{{ c.id }}" {% if filter_category|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>{{ c.icon }} {{ c.name }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-primary w-100">筛选</button>
+    </div>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-hover">
+        <thead class="table-light">
+            <tr>
+                <th>日期</th>
+                <th>类型</th>
+                <th>分类</th>
+                <th>金额</th>
+                <th>备注</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.date|date:"m/d" }}</td>
+                    <td>
+                        {% if tx.type == "INCOME" %}
+                            <span class="badge bg-success">收入</span>
+                        {% else %}
+                            <span class="badge bg-danger">支出</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ tx.category.icon }} {{ tx.category.name }}</td>
+                    <td class="{% if tx.type == 'INCOME' %}text-success{% else %}text-danger{% endif %} fw-bold">
+                        {% if tx.type == "INCOME" %}+{% else %}-{% endif %}{{ tx.amount|floatformat:2 }}
+                    </td>
+                    <td class="text-muted">{{ tx.note|truncatechars:20 }}</td>
+                    <td>
+                        <a href="{% url 'transaction_edit' tx.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
+                        <form method="post" action="{% url 'transaction_delete' tx.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除？')">删除</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted py-4">暂无流水记录</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

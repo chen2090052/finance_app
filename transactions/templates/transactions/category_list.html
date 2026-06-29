@@ -1,0 +1,58 @@
+{% extends 'transactions/base.html' %}
+{% block title %}分类管理 - 记账本{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">分类管理</h4>
+    <a href="{% url 'category_create' %}" class="btn btn-primary">+ 新增分类</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">收入分类</div>
+            <ul class="list-group list-group-flush">
+                {% for c in categories %}
+                    {% if c.type == "INCOME" %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ c.icon }} {{ c.name }}</span>
+                            <div>
+                                <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
+                                <form method="post" action="{% url 'category_delete' c.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除？')">删除</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endif %}
+                {% empty %}
+                    <li class="list-group-item text-muted">暂无收入分类</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">支出分类</div>
+            <ul class="list-group list-group-flush">
+                {% for c in categories %}
+                    {% if c.type == "EXPENSE" %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>{{ c.icon }} {{ c.name }}</span>
+                            <div>
+                                <a href="{% url 'category_edit' c.id %}" class="btn btn-sm btn-outline-secondary">编辑</a>
+                                <form method="post" action="{% url 'category_delete' c.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('确认删除？')">删除</button>
+                                </form>
+                            </div>
+                        </li>
+                    {% endif %}
+                {% empty %}
+                    <li class="list-group-item text-muted">暂无支出分类</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

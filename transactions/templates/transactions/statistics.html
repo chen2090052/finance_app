@@ -1,0 +1,106 @@
+{% extends 'transactions/base.html' %}
+{% block title %}统计报表 - 记账本{% endblock %}
+
+{% block content %}
+<h4 class="mb-3">统计报表</h4>
+
+<form method="get" class="row g-2 mb-4">
+    <div class="col-md-3">
+        <select name="year" class="form-select">
+            {% for y in years %}
+                <option value="{{ y }}" {% if year == y %}selected{% endif %}>{{ y }}年</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select name="month" class="form-select">
+            {% for m in months %}
+                <option value="{{ m }}" {% if month == m %}selected{% endif %}>{{ m }}月</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-outline-primary w-100">查看</button>
+    </div>
+</form>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-success">{{ year }}年{{ month }}月 收入</h6>
+                <h3 class="text-success mb-0">+{{ stats.income|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-danger">{{ year }}年{{ month }}月 支出</h6>
+                <h3 class="text-danger mb-0">-{{ stats.expense|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-primary">{{ year }}年{{ month }}月 结余</h6>
+                <h3 class="text-primary mb-0">{{ stats.balance|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">收入详情</div>
+            <ul class="list-group list-group-flush">
+                {% for item in stats.income_by_cat %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ item.category__icon }} {{ item.category__name }}</span>
+                        <span class="text-success fw-bold">+{{ item.total|floatformat:2 }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">本月无收入</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">支出详情</div>
+            <ul class="list-group list-group-flush">
+                {% for item in stats.expense_by_cat %}
+                    <li class="list-group-item d-flex justify-content-between">
+                        <span>{{ item.category__icon }} {{ item.category__name }}</span>
+                        <span class="text-danger fw-bold">-{{ item.total|floatformat:2 }}</span>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item text-muted">本月无支出</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">{{ year }}年度汇总</div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-4">
+                <h6 class="text-success">总收入</h6>
+                <h4 class="text-success">+{{ annual_income|floatformat:2 }}</h4>
+            </div>
+            <div class="col-4">
+                <h6 class="text-danger">总支出</h6>
+                <h4 class="text-danger">-{{ annual_expense|floatformat:2 }}</h4>
+            </div>
+            <div class="col-4">
+                <h6 class="text-primary">总结余</h6>
+                <h4 class="text-primary">{{ annual_balance|floatformat:2 }}</h4>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

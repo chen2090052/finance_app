@@ -1,0 +1,50 @@
+{% extends 'transactions/base.html' %}
+{% block title %}{% if is_edit %}编辑流水{% else %}新增流水{% endif %} - 记账本{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">{% if is_edit %}编辑流水{% else %}新增流水{% endif %}</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}
+                                <div class="text-danger small">{{ field.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'transaction_list' %}" class="btn btn-outline-secondary">返回</a>
+                        <button type="submit" class="btn btn-primary">
+                            {% if is_edit %}保存修改{% else %}添加{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.getElementById('id_type');
+    const categorySelect = document.getElementById('id_category');
+    if (typeSelect && categorySelect) {
+        typeSelect.addEventListener('change', function() {
+            fetch('{% url "load_categories" %}?type=' + this.value)
+                .then(r => r.text())
+                .then(html => { categorySelect.innerHTML = html; });
+        });
+    }
+});
+</script>
+{% endblock %}
