@@ -1,12 +1,14 @@
 from datetime import date
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib import messages
-from django.db.models import Sum
 
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Sum
+from django.shortcuts import get_object_or_404, redirect, render
+
+from .forms import CategoryForm, TransactionForm
 from .models import Category, Transaction
-from .forms import TransactionForm, CategoryForm
-from .services.transaction_service import TransactionService
 from .services.category_service import CategoryService
+from .services.transaction_service import TransactionService
 
 tx_svc = TransactionService()
 cat_svc = CategoryService()
@@ -27,17 +29,19 @@ def _months_list():
     return list(range(1, 13))
 
 
+@login_required
 def transaction_list(request):
     year, month = _get_year_month(request)
     type_filter = request.GET.get("type", "")
     category_id = request.GET.get("category", "")
 
     transactions = tx_svc.list_transactions(
+        user=request.user,
         year=year, month=month,
         type_filter=type_filter or None,
         category_id=category_id or None,
     )
-    stats = tx_svc.get_statistics(year, month)
+    stats = tx_svc.get_statistics(request.user, year, month)
     categories = Category.objects.filter(is_deleted=False)
 
     return render(request, "transactions/transaction_list.html", {
@@ -53,11 +57,12 @@ def transaction_list(request):
     })
 
 
+@login_required
 def transaction_create(request):
     if request.method == "POST":
         form = TransactionForm(request.POST)
         if form.is_valid():
-            tx_svc.create_transaction(form.cleaned_data)
+            tx_svc.create_transaction(form.cleaned_data, request.user)
             messages.success(request, "流水添加成功")
             return redirect("transaction_list")
     else:
@@ -73,8 +78,12 @@ def transaction_create(request):
     })
 
 
+@login_required
 def transaction_edit(request, pk):
     t = get_object_or_404(Transaction, id=pk, is_deleted=False)
+    if not request.user.is_staff and t.user != request.user:
+        messages.error(request, "无权操作此记录")
+        return redirect("transaction_list")
     if request.method == "POST":
         form = TransactionForm(request.POST, instance=t)
         if form.is_valid():
@@ -90,13 +99,20 @@ def transaction_edit(request, pk):
     })
 
 
+@login_required
 def transaction_delete(request, pk):
     if request.method == "POST":
-        tx_svc.delete_transaction(pk)
-        messages.success(request, "流水已删除")
+        t = get_object_or_404(Transaction, id=pk, is_deleted=False)
+        if not request.user.is_staff and t.user != request.user:
+            messages.error(request, "无权操作此记录")
+        else:
+            tx_svc.delete_transaction(pk)
+            messages.success(request, "流水已删除")
     return redirect("transaction_list")
 
 
+@login_required
+@user_passes_test(lambda u: u.is_staff)
 def category_list(request):
     categories = cat_svc.list_categories()
     return render(request, "transactions/category_list.html", {
@@ -104,6 +120,8 @@ def category_list(request):
     })
 
 
+@login_required
+@user_passes_test(lambda u: u.is_staff)
 def category_create(request):
     if request.method == "POST":
         form = CategoryForm(request.POST)
@@ -120,6 +138,8 @@ def category_create(request):
     })
 
 
+@login_required
+@user_passes_test(lambda u: u.is_staff)
 def category_edit(request, pk):
     c = get_object_or_404(Category, id=pk, is_deleted=False)
     if request.method == "POST":
@@ -137,6 +157,8 @@ def category_edit(request, pk):
     })
 
 
+@login_required
+@user_passes_test(lambda u: u.is_staff)
 def category_delete(request, pk):
     if request.method == "POST":
         try:
@@ -147,19 +169,20 @@ def category_delete(request, pk):
     return redirect("category_list")
 
 
+@login_required
 def statistics(request):
     year, month = _get_year_month(request)
-    stats = tx_svc.get_statistics(year, month)
+    stats = tx_svc.get_statistics(request.user, year, month)
+
+    base_qs = Transaction.objects.filter(is_deleted=False, date__year=year)
+    if not request.user.is_staff:
+        base_qs = base_qs.filter(user=request.user)
 
     annual_income = (
-        Transaction.objects.filter(
-            is_deleted=False, date__year=year, type="INCOME")
-        .aggregate(total=Sum("amount"))["total"] or 0
+        base_qs.filter(type="INCOME").aggregate(total=Sum("amount"))["total"] or 0
     )
     annual_expense = (
-        Transaction.objects.filter(
-            is_deleted=False, date__year=year, type="EXPENSE")
-        .aggregate(total=Sum("amount"))["total"] or 0
+        base_qs.filter(type="EXPENSE").aggregate(total=Sum("amount"))["total"] or 0
     )
 
     return render(request, "transactions/statistics.html", {
@@ -174,6 +197,7 @@ def statistics(request):
     })
 
 
+@login_required
 def load_categories(request):
     t = request.GET.get("type")
     qs = Category.objects.filter(is_deleted=False)

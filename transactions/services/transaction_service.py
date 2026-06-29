@@ -9,10 +9,12 @@ logger = logging.getLogger("business")
 
 class TransactionService:
 
-    def list_transactions(self, year=None, month=None, type_filter=None,
-                          category_id=None):
+    def list_transactions(self, user=None, year=None, month=None,
+                          type_filter=None, category_id=None):
         qs = Transaction.objects.filter(
             is_deleted=False).select_related("category")
+        if user and not user.is_staff:
+            qs = qs.filter(user=user)
         if year:
             qs = qs.filter(date__year=year)
         if month:
@@ -26,13 +28,14 @@ class TransactionService:
     def get_transaction(self, transaction_id):
         return Transaction.objects.get(id=transaction_id, is_deleted=False)
 
-    def create_transaction(self, data):
+    def create_transaction(self, data, user=None):
         with transaction.atomic():
-            t = Transaction.objects.create(**data)
+            t = Transaction.objects.create(user=user, **data)
             logger.info(
                 "创建流水",
                 extra={
                     "transaction_id": t.id,
+                    "user_id": t.user_id,
                     "amount": str(t.amount),
                     "type": t.type,
                 },
@@ -55,10 +58,13 @@ class TransactionService:
             t.save()
             logger.info("删除流水", extra={"transaction_id": t.id})
 
-    def get_statistics(self, year, month):
+    def get_statistics(self, user, year, month):
         qs = Transaction.objects.filter(
             is_deleted=False, date__year=year, date__month=month,
         )
+        if not user.is_staff:
+            qs = qs.filter(user=user)
+
         income = (qs.filter(type="INCOME").aggregate(
             total=Sum("amount"))["total"] or 0)
         expense = (qs.filter(type="EXPENSE").aggregate(

@@ -41,8 +41,36 @@ DROP TABLE IF EXISTS transactions_transaction;
 
 ---
 
+### 记录 2：字段添加 - user_id
+
+| 项目 | 内容 |
+|------|------|
+| 修改日期 | 2026-06-29 |
+| 修改人 | yueye12 |
+| 变更类型 | 字段添加 |
+| 变更字段 | user_id |
+| 变更原因 | 增加用户认证，流水记录需要关联到用户 |
+
+**SQL 语句：**
+```sql
+ALTER TABLE transactions_transaction ADD COLUMN user_id INTEGER NOT NULL REFERENCES auth_user(id) DEFAULT 1;
+CREATE INDEX transactions_transaction_user_id_idx ON transactions_transaction(user_id);
+```
+
+**数据迁移：**
+- 创建默认管理员用户 admin（密码 admin123）
+- 已有流水记录全部关联到 admin 用户
+
+**回滚 SQL：**
+```sql
+ALTER TABLE transactions_transaction DROP COLUMN user_id;
+```
+
+---
+
 ## 汇总
 
 | 序号 | 日期 | 类型 | 表名 | 修改人 |
 |------|------|------|-----------|--------|
 | 1 | 2026-06-29 | 表创建 | transactions_transaction | yueye12 |
+| 2 | 2026-06-29 | 字段添加 | transactions_transaction.user_id | yueye12 |

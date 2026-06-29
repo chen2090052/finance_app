@@ -1,9 +1,10 @@
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from transactions.models import Category
 
 
 class Command(BaseCommand):
-    help = "初始化默认分类数据"
+    help = "初始化默认分类数据和管理员用户"
 
     def handle(self, *args, **options):
         categories = [
@@ -33,3 +34,14 @@ class Command(BaseCommand):
                 created += 1
 
         self.stdout.write(self.style.SUCCESS(f"初始化完成，新增 {created} 个分类"))
+
+        User = get_user_model()
+        if not User.objects.filter(username="admin").exists():
+            User.objects.create_superuser(
+                username="admin",
+                password="admin123",
+                email="admin@example.com",
+            )
+            self.stdout.write(self.style.SUCCESS("管理员用户已创建 (admin / admin123)"))
+        else:
+            self.stdout.write("管理员用户已存在，跳过")

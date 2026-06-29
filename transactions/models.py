@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 
 
@@ -30,6 +31,10 @@ class Transaction(models.Model):
         ("EXPENSE", "支出"),
     ]
 
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE,
+        verbose_name="用户", db_index=True,
+    )
     amount = models.DecimalField("金额", max_digits=12, decimal_places=2)
     type = models.CharField("类型", max_length=10, choices=TYPE_CHOICES, db_index=True)
     category = models.ForeignKey(

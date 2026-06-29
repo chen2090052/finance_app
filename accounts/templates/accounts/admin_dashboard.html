@@ -1,0 +1,97 @@
+{% extends 'transactions/base.html' %}
+{% block title %}管理后台 - 记账本{% endblock %}
+
+{% block content %}
+<h4 class="mb-3">&#x1F4CA; 管理后台</h4>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-primary">&#x1F464; 用户数</h6>
+                <h3 class="text-primary mb-0">{{ total_users }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-info">&#x1F4DD; 流水总数</h6>
+                <h3 class="text-info mb-0">{{ total_transactions }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-success">&#x1F4B0; 总收入</h6>
+                <h3 class="text-success mb-0">+{{ total_income|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <h6 class="card-subtitle text-danger">&#x1F4B8; 总支出</h6>
+                <h3 class="text-danger mb-0">-{{ total_expense|floatformat:2 }}</h3>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-secondary text-white">快捷操作</div>
+            <div class="card-body">
+                <a href="{% url 'admin_user_list' %}" class="btn btn-outline-primary me-2">&#x1F464; 用户管理</a>
+                <a href="{% url 'transaction_list' %}" class="btn btn-outline-info me-2">&#x1F4DD; 流水管理</a>
+                <a href="{% url 'category_list' %}" class="btn btn-outline-success me-2">&#x1F4C2; 分类管理</a>
+                <a href="/admin/" class="btn btn-outline-secondary" target="_blank">&#x2699; Django Admin</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">最近流水</div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>日期</th>
+                    <th>用户</th>
+                    <th>类型</th>
+                    <th>分类</th>
+                    <th>金额</th>
+                    <th>备注</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in recent_transactions %}
+                    <tr>
+                        <td>{{ tx.date|date:"m/d" }}</td>
+                        <td>{{ tx.user.username }}</td>
+                        <td>
+                            {% if tx.type == "INCOME" %}
+                                <span class="badge bg-success">收入</span>
+                            {% else %}
+                                <span class="badge bg-danger">支出</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ tx.category.icon }} {{ tx.category.name }}</td>
+                        <td class="{% if tx.type == 'INCOME' %}text-success{% else %}text-danger{% endif %} fw-bold">
+                            {% if tx.type == "INCOME" %}+{% else %}-{% endif %}{{ tx.amount|floatformat:2 }}
+                        </td>
+                        <td class="text-muted">{{ tx.note|truncatechars:20 }}</td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center text-muted py-3">暂无流水记录</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
